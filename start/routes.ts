@@ -27,9 +27,6 @@ import DeploymentsController from '#controllers/deployments_controller'
 import GitHubDeploymentsController from '#controllers/github_deployments_controller'
 import GitHubController from '#controllers/github_controller'
 import FlyWebhooksController from '#drivers/fly/fly_logs_controller'
-import KanbanBoardsController from '#controllers/kanban/kanban_boards_controller'
-import KanbanColumnsController from '#controllers/kanban/kanban_columns_controller'
-import KanbanTasksController from '#controllers/kanban/kanban_tasks_controller'
 import Organization from '#models/organization'
 import OrganizationsController from '#controllers/organizations_controller'
 import ChatController from '#controllers/chat_controller'
@@ -37,12 +34,9 @@ import ChannelsController from '#controllers/channels_controller'
 import MessagesController from '#controllers/messages_controller'
 import ConversationsController from '#controllers/conversations_controller'
 import StorageBucketsController from '#controllers/storage_buckets_controller'
-import MailsController from '#controllers/mails_controller'
-import MailDomainsController from '#controllers/mail_domains_controller'
-import DevMachinesController from '#controllers/dev_machines_controller'
-import GitRepositoriesController from '#controllers/git_repositories_controller'
-import AnalyticsWebsitesController from '#controllers/analytics_websites_controller'
-import MailApiKeysController from '#controllers/mail_api_keys_controller'
+import KanbanBoardsController from '#controllers/kanban/kanban_boards_controller'
+import KanbanColumnsController from '#controllers/kanban/kanban_columns_controller'
+import KanbanTasksController from '#controllers/kanban/kanban_tasks_controller'
 
 router.get('/', async ({ auth, response }) => {
   if (auth.isAuthenticated) {
@@ -380,74 +374,3 @@ router
   })
   .use(middleware.auth())
   .use(middleware.drapeau('storage_buckets'))
-
-/**
- * Mails
- */
-router
-  .get('/organizations/:organizationSlug/projects/:projectSlug/mails', [
-    MailsController,
-    'overview',
-  ])
-  .use([middleware.auth(), middleware.loadProjects()])
-router
-  .resource('organizations.projects.mail_domains', MailDomainsController)
-  .except(['create', 'edit'])
-  .params({
-    organizations: 'organizationSlug',
-    projects: 'projectSlug',
-    mail_domains: 'id',
-  })
-  .use('*', middleware.auth())
-  .use(['index', 'show'], middleware.loadProjects())
-router
-  .resource('organizations.projects.mail_api_keys', MailApiKeysController)
-  .except(['create', 'edit'])
-  .params({
-    organizations: 'organizationSlug',
-    projects: 'projectSlug',
-    mail_api_keys: 'id',
-  })
-  .use('*', middleware.auth())
-  .use(['index', 'show'], middleware.loadProjects())
-
-/**
- * Dev Machines.
- */
-router
-  .resource('organizations.projects.dev_machines', DevMachinesController)
-  .params({
-    organizations: 'organizationSlug',
-    projects: 'projectSlug',
-    dev_machines: 'devMachineSlug',
-  })
-  .use('*', [middleware.auth()])
-  .use('index', middleware.loadProjects())
-  .except(['create', 'edit', 'update'])
-
-/**
- * Git repositories.
- */
-router
-  .resource('organizations.projects.git_repositories', GitRepositoriesController)
-  .params({
-    organizations: 'organizationSlug',
-    projects: 'projectSlug',
-    git_repositories: 'gitRepositorySlug',
-  })
-  .use('*', [middleware.auth()])
-  .use(['index', 'show', 'edit'], middleware.loadProjects())
-
-/**
- * Analytics.
- */
-router
-  .resource('organizations.projects.analytics_websites', AnalyticsWebsitesController)
-  .except(['create', 'update'])
-  .params({
-    organizations: 'organizationSlug',
-    projects: 'projectSlug',
-    analytics_websites: 'analyticsWebsiteId',
-  })
-  .use('*', [middleware.auth()])
-  .use(['index', 'show', 'edit'], middleware.loadProjects())

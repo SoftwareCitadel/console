@@ -10,19 +10,23 @@ export function CreateNewTask(props: { columnId: number }) {
   const { columnId } = props
   const [enabled, toggle] = useToggle(false)
   const params = useParams()
-
   const { data, setData, post, reset } = useForm({
     title: '',
   })
 
+  function onCancel() {
+    reset()
+    toggle()
+  }
+
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
     post(
       `/organizations/${params.organizationSlug}/projects/${params.projectSlug}/kanban_boards/${params.kanbanBoardSlug}/columns/${columnId}/tasks`,
       {
         onSuccess() {
-          reset()
-          toggle()
+          onCancel()
         },
       }
     )
@@ -44,7 +48,7 @@ export function CreateNewTask(props: { columnId: number }) {
           </Card>
           <div className="flex items-center mt-2">
             <Button>Add card</Button>
-            <Button variant="ghost">
+            <Button onClick={onCancel} variant="ghost" type="button">
               {' '}
               <IconX className="size-5" />{' '}
             </Button>
@@ -53,7 +57,7 @@ export function CreateNewTask(props: { columnId: number }) {
       ) : (
         <Button
           onClick={toggle}
-          className="w-full mt-4 border-2 border-dashed gap-x-2 bg-transparent"
+          className="w-full  border-2 border-dashed gap-x-2 bg-transparent"
           variant="outline"
         >
           <IconPlus className="w-4" />

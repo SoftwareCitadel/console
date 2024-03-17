@@ -6,8 +6,11 @@ import { DragDropContext, Droppable } from 'react-beautiful-dnd'
 import { Column } from '../components/kanban_colomn'
 import { router } from '@inertiajs/react'
 import useParams from '@/hooks/use_params'
-import Button from '@/components/button'
 import { CreateNewColumn } from '../components/form/create_kanban_column'
+import { useState } from 'react'
+import reorder from '@/lib/reorder'
+import type { KanbanColumn } from '../types/kanban_column'
+import type { KanbanTask } from '../types/kanban_task'
 
 interface ShowProps {
   project: Project
@@ -32,11 +35,12 @@ type Result = {
 
 const Show: React.FunctionComponent<ShowProps> = ({ project, board }) => {
   const params = useParams()
-  const sortedColumns = board.columns.sort().sort((a, b) => {
-    if (a.order < b.order) return -1
-    if (a.order > b.order) return 1
-    return 0
-  })
+
+  const [sortedColumns, setSortedColums] = useState(board.columns)
+
+  React.useEffect(() => {
+    setSortedColums(board.columns)
+  }, [board])
 
   function onDragEnd({ destination, source, type }: Result) {
     /**
@@ -53,18 +57,21 @@ const Show: React.FunctionComponent<ShowProps> = ({ project, board }) => {
      * The user moves a column.
      */
     if (type === 'column') {
-      /**
-       * Retrieve the first and second columns.
-       */
-      const firstColumn = board.columns[source.index]
-      const secondColumn = board.columns[destination.index]
+      const items = reorder(sortedColumns, source.index, destination.index).map((item, index) => ({
+        ...item,
+        order: index + 1,
+      }))
+
+      setSortedColums(items)
 
       /**
        * Update the order of the columns.
        */
       router.put(
-        `/organizations/${params.organizationSlug}/projects/${project.slug}/kanban_boards/${board.slug}/columns/${firstColumn.id}`,
-        { order: secondColumn.order }
+        `/organizations/${params.organizationSlug}/projects/${project.slug}/kanban_boards/${board.slug}/columns/${
+          board.columns[source.index].id
+        }`,
+        { columns: items }
       )
     }
 
@@ -72,24 +79,71 @@ const Show: React.FunctionComponent<ShowProps> = ({ project, board }) => {
      * The user moves a card.
      */
     if (type === 'card') {
+      let newSortedColums = [...sortedColumns]
       /**
        * Retrieve the source and destination columns.
        */
-      const sourceColumn = board.columns.find((column) => column.id === +source.droppableId)
-      const destColumn = board.columns.find((column) => column.id === +destination.droppableId)
+      const sourceColumn = newSortedColums.find((column) => column.id === +source.droppableId)
+      const destColumn = newSortedColums.find((column) => column.id === +destination.droppableId)
       if (!sourceColumn || !destColumn) return
+
+      // Check if cards exists on the sourceList
+      if (!sourceColumn.tasks) {
+        sourceColumn.tasks = []
+      }
+
+      // Check if cards exists on the destList
+      if (!destColumn.tasks) {
+        destColumn.tasks = []
+      }
 
       /**
        * The card is moved within the same column.
        * We only need to update the order of the cards.
        */
       if (source.droppableId === destination.droppableId) {
-        console.log(source, destination)
+        const reorderedTasks = reorder(sourceColumn.tasks, source.index, destination.index)
+
+        reorderedTasks.forEach((task, idx) => {
+          task.order = idx + 1
+        })
+
+        sourceColumn.tasks = reorderedTasks
+        setSortedColums(newSortedColums)
+
         router.patch(
           `/organizations/${params.organizationSlug}/projects/${project.slug}/kanban_boards/${board.slug}/columns/${source.droppableId}/tasks/${sourceColumn.tasks[source.index].id}`,
-          { order: sourceColumn.tasks[destination.index].order }
+          { tasks: reorderedTasks }
         )
       } else {
+        /**
+         * Remove card from the source list
+         */
+        const [movedTask] = sourceColumn.tasks.splice(source.index, 1)
+
+        /**
+         * Assign the new listId to the moved card
+         */
+        movedTask.columnId = +destination.droppableId
+
+        /**
+         * Add card to the destination list
+         */
+        destColumn.tasks.splice(destination.index, 0, movedTask)
+
+        sourceColumn.tasks.forEach((task, idx) => {
+          task.order = idx + 1
+        })
+
+        /**
+         * Update the order for each card in the destination list
+         */
+        destColumn.tasks.forEach((task, idx) => {
+          task.order = idx + 1
+        })
+
+        setSortedColums(newSortedColums)
+
         /**
          * The card is moved to a different column.
          * We need to update the order of the cards in both columns.
@@ -104,23 +158,23 @@ const Show: React.FunctionComponent<ShowProps> = ({ project, board }) => {
 
   return (
     <KanbanBoardLayout project={project} board={board}>
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="columns" type="column" direction="horizontal">
-          {(provided) => (
-            <ol
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="flex  gap-x-4 items-start w-full overflow-x-scroll  min-h-[calc(100vh_-_230px)] "
-            >
-              {sortedColumns.map((column, index) => (
-                <Column key={column.id} {...column} index={index} />
-              ))}
-              <CreateNewColumn />
-              {provided.placeholder}
-            </ol>
-          )}
-        </Droppable>
-      </DragDropContext>
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="columns" type="column" direction="horizontal">
+            {(provided) => (
+              <ol
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="flex  gap-x-4 items-start w-full overflow-x-scroll  min-h-[calc(100vh_-_230px)] "
+              >
+                {sortedColumns.map((column, index) => (
+                  <Column key={column.id} {...column} index={index} />
+                ))}
+                <CreateNewColumn />
+                {provided.placeholder}
+              </ol>
+            )}
+          </Droppable>
+        </DragDropContext>
     </KanbanBoardLayout>
   )
 }

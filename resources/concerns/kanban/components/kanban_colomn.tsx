@@ -4,15 +4,10 @@ import type { KanbanColumn } from '../types/kanban_column'
 import { ColumnHeader } from './kanban_colomn_header'
 import { ColumnItem } from './kanban_column_item'
 import { CreateNewTask } from './form/create_kanban_task'
-import Button from '@/components/button'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export function Column(props: KanbanColumn & { index: number }) {
   const { id, name, tasks, index } = props
-  const sortedTasks = tasks.sort((a, b) => {
-    if (a.order < b.order) return -1
-    if (a.order > b.order) return 1
-    return 0
-  })
 
   return (
     <Draggable draggableId={id.toString() + '-list'} index={index}>
@@ -29,12 +24,20 @@ export function Column(props: KanbanColumn & { index: number }) {
                 <ol
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="w-full p-2 rounded-lg bg-secondary space-y-2"
+                  className="w-full p-2 rounded-lg bg-secondary"
                 >
-                  {sortedTasks.map((task, idx) => (
+                  {tasks.map((task, idx) => (
                     <ColumnItem key={task.id} {...task} index={idx} />
                   ))}
-                  {!snapshot.draggingOverWith && <CreateNewTask columnId={id} />}
+                  <AnimatePresence>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {!snapshot.draggingOverWith && <CreateNewTask columnId={id} />}
+                    </motion.div>
+                  </AnimatePresence>
                   {provided.placeholder}
                 </ol>
               )}

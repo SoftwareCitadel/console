@@ -4,12 +4,13 @@ import KanbanBoard from '#models/kanban_board'
 import KanbanColumn from '#models/kanban_column'
 import KanbanTask from '#models/kanban_task'
 import Project from '#models/project'
+import { updateKanbanTaskValidator } from '#validators/kanban_column/update_kanban_task_validator'
 import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 
 export default class KanbanTasksController {
   @bindProjectAndKanbanBoardAndKanbanColumn
-  public async store(
+  async store(
     { bouncer, request, response }: HttpContext,
     project: Project,
     _board: KanbanBoard,
@@ -24,7 +25,7 @@ export default class KanbanTasksController {
   }
 
   @bindProjectAndKanbanBoardAndKanbanColumnAndKanbanTask
-  public async update(
+  async update(
     { bouncer, request, response }: HttpContext,
     project: Project,
     _board: KanbanBoard,
@@ -32,10 +33,11 @@ export default class KanbanTasksController {
     task: KanbanTask
   ) {
     await bouncer.authorize('accessToProject', project)
+    const payload = await request.validateUsing(updateKanbanTaskValidator)
 
-    if (request.input('columnId') !== undefined && request.input('order') !== undefined) {
-      task.columnId = request.input('columnId')
-      task.order = request.input('order')
+    if (payload.columnId && payload.order) {
+      task.columnId = payload.columnId
+      task.order = payload.order
       await task.save()
 
       // Let's increment the order of all the tasks that are >= to the new order
@@ -50,20 +52,14 @@ export default class KanbanTasksController {
       return response.redirect().back()
     }
 
-    if (request.input('order') !== undefined) {
-      const existingTaskWithNewOrder = await KanbanTask.query()
-        .where('order', request.input('order'))
-        .first()
-      if (existingTaskWithNewOrder) {
-        existingTaskWithNewOrder.order = task.order
-        await existingTaskWithNewOrder.save()
+    if (payload.tasks) {
+      for (let i = 0; i < payload.tasks.length; i++) {
+        await KanbanTask.query().where('id', payload.tasks[i].id).update(payload.tasks[i])
       }
-
-      task.order = request.input('order')
-      await task.save()
     }
-    if (request.input('title')) {
-      task.title = request.input('title')
+
+    if (payload.title) {
+      task.title = payload.title
       await task.save()
     }
 
@@ -71,14 +67,15 @@ export default class KanbanTasksController {
   }
 
   @bindProjectAndKanbanBoardAndKanbanColumnAndKanbanTask
-  public async destroy(
+  async destroy(
     { bouncer, response }: HttpContext,
     project: Project,
     _board: KanbanBoard,
     _column: KanbanColumn,
     task: KanbanTask
   ) {
-    await bouncer.authorize('accessToProject', project)
+    // await bouncer.authorize('accessToProject', project)
+    console.log('Test')
     await task.delete()
     return response.redirect().back()
   }

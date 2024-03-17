@@ -5,7 +5,7 @@ import { IconCircleCheck } from '@tabler/icons-react'
 export default function useSuccessToast() {
   const { toast } = useToast()
 
-  return function (message = 'Saved successfully') {
+  return function (message: string = "Saved successfully") {
     toast({
       title: (
         <div className="flex items-center space-x-2">

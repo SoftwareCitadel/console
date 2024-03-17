@@ -12,6 +12,8 @@ interface KanbanBoardLayoutProps {
   board: KanbanBoard
 }
 
+
+
 const KanbanBoardLayout: React.FunctionComponent<
   React.PropsWithChildren<KanbanBoardLayoutProps>
 > = ({ project, board, children }) => {

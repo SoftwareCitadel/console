@@ -4,10 +4,11 @@ import KanbanBoard from '#models/kanban_board'
 import KanbanColumn from '#models/kanban_column'
 import Project from '#models/project'
 import { HttpContext } from '@adonisjs/core/http'
+import { updateKanbanColumnValidator } from '#validators/kanban_column/update_kanban_column_validator'
 
 export default class KanbanColumnsController {
   @bindProjectAndKanbanBoard
-  public async store({ request, response }: HttpContext, _project: Project, board: KanbanBoard) {
+  async store({ request, response }: HttpContext, _project: Project, board: KanbanBoard) {
     await board.load('columns')
     const order = board.columns.length + 1
     await board.related('columns').create({ ...request.only(['name']), order })
@@ -15,30 +16,32 @@ export default class KanbanColumnsController {
   }
 
   @bindProjectAndKanbanBoardAndKanbanColumn
-  public async update(
+  async update(
     { request, response }: HttpContext,
     _project: Project,
     board: KanbanBoard,
     firstColumn: KanbanColumn
   ) {
-    const newOrder = request.input('order')
-    const oldOrder = firstColumn.order
+    const payload = await request.validateUsing(updateKanbanColumnValidator)
+    if (payload.name) {
+      await firstColumn
+        .merge({
+          name: payload.name,
+        })
+        .save()
+    }
 
-    const secondColumn = await KanbanColumn.query()
-      .where('order', newOrder)
-      .andWhere('board_id', board.id)
-      .firstOrFail()
-
-    firstColumn.order = newOrder
-    secondColumn.order = oldOrder
-
-    await Promise.all([firstColumn.save(), secondColumn.save()])
+    if (payload.columns) {
+      for (let i = 0; i < payload.columns.length; i++) {
+        await KanbanColumn.query().where('id', payload.columns[i].id).update(payload.columns[i])
+      }
+    }
 
     return response.redirect().back()
   }
 
   @bindProjectAndKanbanBoardAndKanbanColumn
-  public async destroy(
+  async destroy(
     { response }: HttpContext,
     _project: Project,
     _board: KanbanBoard,

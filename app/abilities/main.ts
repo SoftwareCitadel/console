@@ -17,12 +17,12 @@ import Project from '#models/project'
 import User from '#models/user'
 import { Bouncer } from '@adonisjs/bouncer'
 
-export const accessToProject = Bouncer.ability((user: User, project: Project) => {
+export const accessToProject = Bouncer.ability(async (user: User, project: Project) => {
   /**
    * For now, we are allowing everyone in the project's organization to access the manage the project.
    * So, we are checking if the user is a member of the project's organization.
    */
-  const organizationMember = OrganizationMember.query()
+  const organizationMember = await OrganizationMember.query()
     .where('userId', user.id)
     .andWhere('organizationId', project.organizationId)
     .first()

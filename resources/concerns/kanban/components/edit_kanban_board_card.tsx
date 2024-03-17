@@ -18,7 +18,7 @@ const EditKanbanBoardCard: React.FunctionComponent<EditKanbanBoardCardProps> = (
     name: board.name,
   })
   const params = useParams()
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     form.patch(
       `/organizations/${params.organizationSlug}/projects/${params.projectSlug}/kanban_boards/${params.kanbanBoardSlug}`,
@@ -28,7 +28,7 @@ const EditKanbanBoardCard: React.FunctionComponent<EditKanbanBoardCardProps> = (
     )
   }
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={onSubmit}>
       <Card className="mt-6">
         <CardHeader>
           <CardTitle>Edit kanban board</CardTitle>

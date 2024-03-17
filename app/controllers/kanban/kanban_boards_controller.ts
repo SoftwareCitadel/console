@@ -6,13 +6,13 @@ import { HttpContext } from '@adonisjs/core/http'
 
 export default class KanbanBoardsController {
   @bindProject
-  public async index({ inertia }: HttpContext, project: Project) {
+  async index({ inertia }: HttpContext, project: Project) {
     const boards = await project.related('kanbanBoards').query()
     return inertia.render('kanban/index', { project, boards })
   }
 
   @bindProject
-  public async store({ request, response }: HttpContext, project: Project) {
+  async store({ request, response }: HttpContext, project: Project) {
     const kanbanBoard = await project.related('kanbanBoards').create(request.only(['name']))
 
     // Create default columns
@@ -30,7 +30,7 @@ export default class KanbanBoardsController {
   }
 
   @bindProjectAndKanbanBoard
-  public async show({ inertia }: HttpContext, project: Project, board: KanbanBoard) {
+  async show({ inertia }: HttpContext, project: Project, board: KanbanBoard) {
     await board.load('columns', (query) => {
       query.preload('tasks').orderBy('order', 'asc')
 
@@ -40,12 +40,12 @@ export default class KanbanBoardsController {
   }
 
   @bindProjectAndKanbanBoard
-  public async edit({ inertia }: HttpContext, project: Project, board: KanbanBoard) {
+  async edit({ inertia }: HttpContext, project: Project, board: KanbanBoard) {
     return inertia.render('kanban/edit', { project, board })
   }
 
   @bindProjectAndKanbanBoard
-  public async update({ request, response }: HttpContext, _project: Project, board: KanbanBoard) {
+  async update({ request, response }: HttpContext, _project: Project, board: KanbanBoard) {
     if (request.input('name')) {
       await board.merge({ name: request.input('name') }).save()
     }
@@ -53,7 +53,7 @@ export default class KanbanBoardsController {
   }
 
   @bindProjectAndKanbanBoard
-  public async destroy({ response }: HttpContext, project: Project, board: KanbanBoard) {
+  async destroy({ response }: HttpContext, project: Project, board: KanbanBoard) {
     await board.delete()
     return response
       .redirect()

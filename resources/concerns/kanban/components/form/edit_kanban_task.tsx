@@ -19,7 +19,7 @@ export function EditTask(props: {
     title,
   })
 
-  useClickOutside(ref, (event) => {
+  useClickOutside(ref, () => {
     onClose()
   })
 
@@ -36,7 +36,7 @@ export function EditTask(props: {
     )
   }
   return (
-    <>
+    <div className="mb-2">
       <form ref={ref} onSubmit={onSubmit}>
         <Card>
           <CardHeader className="p-0 border-none space-y-1">
@@ -53,6 +53,6 @@ export function EditTask(props: {
           <Button>Save</Button>
         </div>
       </form>
-    </>
+    </div>
   )
 }

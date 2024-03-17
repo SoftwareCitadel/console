@@ -5,9 +5,9 @@ import { Link } from '@inertiajs/react'
 import useParams from '@/hooks/use_params'
 import { IconArchive } from '@tabler/icons-react'
 import usePageProps from '@/hooks/use_page_props'
-import StorageBucketInfo from './components/storage_bucket_info'
 import StorageTabs from './components/storage_tabs'
-import type { StorageBucket, StorageBucketFile } from './types/storage_bucket'
+import type { StorageBucket } from './types/storage_bucket'
+import type { StorageBucketFile } from '~/types/storage'
 
 export type StorageLayoutProps = {
   project: Project

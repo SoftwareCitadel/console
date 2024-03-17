@@ -1,17 +1,24 @@
 import { useClickOutside } from '@/hooks/use_click_outside'
-import { useForm } from '@inertiajs/react'
+import { router, useForm } from "@inertiajs/react";
 import React, { useRef, type ElementRef, type ChangeEvent, type FormEvent } from 'react'
+import useParams from "@/hooks/use_params";
+import useSuccessToast from "@/hooks/use_success_toast";
 
 export function EditColumn(props: { columnId: number; name: string; onClose: () => void }) {
-  const { name, onClose } = props
+  const params = useParams()
+  const { name, columnId, onClose } = props
   const ref = useRef<ElementRef<'input'>>(null)
+  const success = useSuccessToast()
 
-  const { data, setData } = useForm({
+
+  const { data, setData, put } = useForm({
     name,
   })
 
-  useClickOutside(ref, (event) => {
+  useClickOutside(ref, () => {
     onClose()
+    setData('name', name)
+
   })
 
   function onChange(e: ChangeEvent<HTMLInputElement>) {
@@ -20,7 +27,16 @@ export function EditColumn(props: { columnId: number; name: string; onClose: () 
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // TODO: add logic to edit the column name
+    put(
+      `/organizations/${params.organizationSlug}/projects/${params.projectSlug}/kanban_boards/${params.kanbanBoardSlug}/columns/${columnId}`,
+      {
+        onSuccess() {
+          router.reload();
+          success()
+          onClose();
+        }
+      }
+    )
   }
 
   return (
@@ -30,7 +46,7 @@ export function EditColumn(props: { columnId: number; name: string; onClose: () 
         autoFocus
         onChange={onChange}
         value={data.name}
-        className="appearance-none bg-transparent text-sm font-medium border-none p-0 w-fit rounded-full focus:ring-black outline:ring-black"
+        className="appearance-none border bg-transparent text-sm font-medium p-0 w-fit rounded-full focus:ring-black outline:ring-black"
       />
     </form>
   )
